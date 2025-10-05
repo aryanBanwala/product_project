@@ -21,14 +21,14 @@ const PRODUCT_FIELDS = Object.freeze({
  * A standard list of product categories for frontend use.
  */
 const PRODUCT_CATEGORIES = Object.freeze([
-    'Electronics',
+    'Home',
+    'Toys',
     'Books',
+    'Sports',
+    'Beauty',
     'Clothing',
-    'Home & Kitchen',
-    'Sports & Outdoors',
-    'Beauty & Personal Care',
-    'Toys & Games',
-    'Automotive'
+    'Automotive',
+    'Electronics'
 ]);
 
 /**
@@ -108,6 +108,42 @@ class ProductModel {
         const product = await this.collection.findOne({ [PRODUCT_FIELDS.id]: new ObjectId(id) });
         return this._sanitizeProduct(product);
     }
+
+    /**
+     * Finds all products with advanced filtering, sorting, and pagination.
+     * @param {object} options - The options for querying.
+     * @param {object} options.filters - The filter criteria (e.g., { NAME: /search/i }).
+     * @param {object} options.sort - The sort criteria (e.g., { PRICE: -1 }).
+     * @param {object} options.pagination - The pagination criteria (e.g., { skip: 0, limit: 10 }).
+     * @returns {Promise<{products: object[], totalCount: number}>} The list of products and total count.
+     */
+    async findAll({ filters, sort, pagination }) {
+        // The aggregation pipeline allows for complex data processing.
+        const pipeline = [
+            { $match: filters }, // First, filter the documents
+            {
+                $facet: { // $facet processes multiple aggregation pipelines within a single stage
+                    // Pipeline 1: Get the metadata (total count)
+                    metadata: [{ $count: 'total' }],
+                    // Pipeline 2: Get the paginated data
+                    data: [
+                        { $sort: sort }, // Then, sort the results
+                        { $skip: pagination.skip }, // Then, apply pagination skip
+                        { $limit: pagination.limit }, // Finally, apply pagination limit
+                    ],
+                },
+            },
+        ];
+
+        const result = await this.collection.aggregate(pipeline).toArray();
+
+        // Extract and sanitize the data from the aggregation result
+        const products = result[0].data.map(this._sanitizeProduct);
+        const totalCount = result[0].metadata[0] ? result[0].metadata[0].total : 0;
+
+        return { products, totalCount };
+    }
+
 }
 
-module.exports = { ProductModel, PRODUCT_CATEGORIES, DISCOUNT_VALUES };
+module.exports = { ProductModel, PRODUCT_FIELDS , PRODUCT_CATEGORIES, DISCOUNT_VALUES };

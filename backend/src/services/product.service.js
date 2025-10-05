@@ -1,5 +1,7 @@
 const { models: db } = require('../db/mongo/index');
-const { PRODUCT_CATEGORIES, DISCOUNT_VALUES } = require('../db/mongo/product');
+const { PRODUCT_CATEGORIES, DISCOUNT_VALUES , PRODUCT_FIELDS} = require('../db/mongo/product');
+
+const ALLOWED_SORT_FIELDS = ['name', 'price', 'discountFactor', 'finalTotalPrice', 'stock', 'createdAt'];
 
 class ProductService {
     /**
@@ -57,6 +59,62 @@ class ProductService {
         // Step 3: Call the model to create the entry in the database
         const newProduct = await db.product.create(dataForModel);
         return newProduct;
+    }
+
+     /**
+     * Retrieves a list of products based on query parameters.
+     * @param {object} queryParams - The raw query parameters from the request.
+     * @param {string} userId - The ID of the authenticated user (from middleware).
+     * @returns {Promise<object>} The paginated list of products and metadata.
+     */
+    async getProducts(queryParams, userId) {
+        // 1. Pagination
+        const page = parseInt(queryParams.page, 10) || 1;
+        const limit = Math.min(parseInt(queryParams.limit, 10) || 10, 100); // guard limit
+        const pagination = { skip: (page - 1) * limit, limit };
+
+        // 2. Sorting
+        let sortBy = 'createdAt';
+        if (queryParams.sortBy && ALLOWED_SORT_FIELDS.includes(queryParams.sortBy)) {
+            sortBy = queryParams.sortBy;
+        }
+        const sortOrder = queryParams.sortOrder === 'asc' ? 1 : -1;
+        // Map application field name to DB field name safely
+        const dbSortField = PRODUCT_FIELDS[sortBy] || PRODUCT_FIELDS.createdAt;
+        const sort = { [dbSortField]: sortOrder };
+
+        // 3. Filters
+        const filters = {};
+        if (queryParams.categories) {
+            const requested = queryParams.categories.split(',').map(s => s.trim());
+            const validCategories = requested.filter(cat => PRODUCT_CATEGORIES.includes(cat));
+
+            if (validCategories.length) {
+                filters[PRODUCT_FIELDS.category] = { $in: validCategories }; // use DB field name directly
+            }
+        }
+        if (queryParams.ownedByMe === '1' && userId) {
+            try {
+                filters[PRODUCT_FIELDS.createdBy] = new ObjectId(userId); // DB field name
+                console.log(1);
+            } catch (err) {
+                // If userId is not a valid ObjectId, skip the ownedByMe filter
+            }
+        }
+
+        // 4. Call the model - use singular `product` to match other calls (e.g., db.product.create)
+        const { products, totalCount } = await db.product.findAll({ filters, sort, pagination });
+
+        // 5. Response
+        return {
+            products,
+            pagination: {
+                currentPage: page,
+                totalPages: Math.ceil((totalCount || 0) / limit),
+                totalProducts: totalCount || 0,
+                limit
+            }
+        };
     }
 }
 

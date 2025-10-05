@@ -35,6 +35,29 @@ class ProductController {
             });
         }
     }
+
+    /**
+     * Handles the request to get a list of products.
+     */
+    async getProducts(req, res) {
+        try {
+            const result = await productService.getProducts(req.query, req.user.id);
+
+            res.status(200).json({
+                success: true,
+                message: 'Products fetched successfully!',
+                data: result
+            });
+
+        } catch (error) {
+            console.error('Error while fetching products:', error.message);
+            res.status(500).json({
+                success: false,
+                message: 'Failed to fetch products.'
+            });
+        }
+    }
+
 }
 
 module.exports = new ProductController();
