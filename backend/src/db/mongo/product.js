@@ -91,7 +91,7 @@ class ProductModel {
             [PRODUCT_FIELDS.stock]: productData.stock || 0,
             [PRODUCT_FIELDS.discountFactor]: productData.discount || 0,
             [PRODUCT_FIELDS.finalTotalPrice]: productData.finalTotalPrice,
-            [PRODUCT_FIELDS.createdBy]: new ObjectId(productData.userId),
+            [PRODUCT_FIELDS.createdBy]: productData.userId,
             [PRODUCT_FIELDS.createdAt]: new Date(),
             [PRODUCT_FIELDS.updatedAt]: new Date(),
         };

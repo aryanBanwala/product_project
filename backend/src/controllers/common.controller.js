@@ -1,4 +1,4 @@
-const { PRODUCT_CATEGORIES } = require('../db/mongo/product');
+const { PRODUCT_CATEGORIES, DISCOUNT_VALUES } = require('../db/mongo/product');
 
 class CommonController {
     /**
@@ -10,7 +10,8 @@ class CommonController {
                 success: true,
                 message: 'App configuration fetched successfully.',
                 data: {
-                    productCategories: PRODUCT_CATEGORIES
+                    productCategories: PRODUCT_CATEGORIES,
+                    discountFactors: DISCOUNT_VALUES
                 }
             });
         } catch (error) {

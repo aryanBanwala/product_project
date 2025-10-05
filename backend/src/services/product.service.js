@@ -95,8 +95,7 @@ class ProductService {
         }
         if (queryParams.ownedByMe === '1' && userId) {
             try {
-                filters[PRODUCT_FIELDS.createdBy] = new ObjectId(userId); // DB field name
-                console.log(1);
+                filters[PRODUCT_FIELDS.createdBy] = userId; // DB field name
             } catch (err) {
                 // If userId is not a valid ObjectId, skip the ownedByMe filter
             }

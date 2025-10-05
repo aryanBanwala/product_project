@@ -14,7 +14,7 @@ app.use('/api/product', productRoutes);
 
 // A simple root route to check if the server is up
 app.get('/healthcheck', (req, res) => {
-    res.status(200).send('Backend server is running!');
+    res.status(200).json({mssg: 'Backend server is running!'});
 });
 
 module.exports = app;
