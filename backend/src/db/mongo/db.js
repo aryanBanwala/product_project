@@ -16,7 +16,7 @@ class MongoDatabase {
         const dbName = process.env.DB_NAME;
         let mongoUri;
 
-        if (env === 'production') {
+        if (env === 'prod') {
             const user = process.env.MONGO_PROD_USER, pass = process.env.MONGO_PROD_PASS, host = process.env.MONGO_PROD_HOST;
             if (!user || !pass || !host || !dbName) throw new Error('Production DB env vars must be defined.');
             mongoUri = `mongodb+srv://${user}:${pass}@${host}`;
