@@ -40,7 +40,7 @@ class UserController {
         }
     }
 
-     async login(req, res) {
+    async login(req, res) {
         try {
             const { mobile, password } = req.body;
 
@@ -77,6 +77,41 @@ class UserController {
 
         } catch (error) {
             console.error('Error during user login:', error.message);
+            res.status(error.statusCode || 500).json({
+                success: false,
+                message: error.message || 'An internal server error occurred.'
+            });
+        }
+    }
+
+    /**
+     * User profile update request ko handle karta hai, step-by-step.
+     */
+    async editProfile(req, res) {
+        try {
+            // Step 1: URL se user ID nikalna
+            const userId = req.headers.userid;
+
+            // Step 2: Service se allowed fields ko filter karwana
+            const filteredData = userService.filterAllowedFields(req.body);
+            
+            // Step 3: Agar mobile update ho raha hai, toh uski availability check karna
+            if (filteredData.mobile) {
+                await userService.checkMobileAvailability(filteredData.mobile, userId);
+            }
+
+            // Step 4: Database mein update karwana
+            const updatedUser = await userService.updateUserInDB(userId, filteredData);
+
+            // Step 5: Safal response bhejna
+            res.status(200).json({
+                success: true,
+                message: 'Profile updated successfully!',
+                data: updatedUser
+            });
+
+        } catch (error) {
+            console.error('Error during profile update:', error.message);
             res.status(error.statusCode || 500).json({
                 success: false,
                 message: error.message || 'An internal server error occurred.'

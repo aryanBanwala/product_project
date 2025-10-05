@@ -1,6 +1,8 @@
 const bcrypt = require('bcrypt');
 const { models: db } = require('../db/mongo/index');
 
+const EDITABLE_USER_FIELDS = ['name', 'email', 'mobile'];
+
 class UserService {
     /**
      * Validates the user signup input.
@@ -123,6 +125,54 @@ class UserService {
         return 'placeholder_auth_token_for_now';
     }
 
+    // --- PROFILE UPDATE FUNCTIONS ---
+
+    /**
+     * Request body se sirf allowed fields ko filter karta hai.
+     * @param {object} updateData - req.body se aaya hua raw data.
+     * @returns {object} Sirf allowed fields wala naya object.
+     */
+    filterAllowedFields(updateData) {
+        const filteredData = {};
+        for (const field of EDITABLE_USER_FIELDS) {
+            // Check karein ki field request mein मौजूद hai ya nahi (null/empty bhi valid ho sakta hai)
+            if (updateData.hasOwnProperty(field)) {
+                filteredData[field] = updateData[field];
+            }
+        }
+
+        if (Object.keys(filteredData).length === 0) {
+            const error = new Error('No valid fields provided for update.');
+            error.statusCode = 400; // Bad Request
+            throw error;
+        }
+
+        return filteredData;
+    }
+
+    /**
+     * Check karta hai ki naya mobile number kisi aur user ne toh nahi le rakha.
+     * @param {string} mobile - Naya mobile number.
+     * @param {string} currentUserId - Current user ki ID taaki usey search se exclude kiya ja sake.
+     */
+    async checkMobileAvailability(mobile, currentUserId) {
+        const existingUser = await db.users.findByMobile(mobile, currentUserId);
+        if (existingUser) {
+            const error = new Error('This mobile number is already taken by another user.');
+            error.statusCode = 409; // Conflict
+            throw error;
+        }
+    }
+
+    /**
+     * Database mein user ko update karta hai.
+     * @param {string} userId - User ki ID.
+     * @param {object} dataToUpdate - Filter kiya hua data.
+     * @returns {Promise<object>} Update kiya hua user.
+     */
+    async updateUserInDB(userId, dataToUpdate) {
+        return db.users.updateById(userId, dataToUpdate);
+    }
 }
 
 module.exports = new UserService();

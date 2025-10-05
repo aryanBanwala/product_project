@@ -117,6 +117,48 @@ class UserModel {
         const user = await this.collection.findOne({ [USER_FIELDS.id]: new ObjectId(id) });
         return this._sanitizeUser(user);
     }
+
+    /**
+     * Updates a user's details in the database.
+     * @param {string} userId - The ID of the user to update.
+     * @param {object} updateData - An object with fields to update.
+     * @returns {Promise<object|null>} The updated, sanitized user document.
+     */
+    /**
+     * Updates a user's details, correctly mapping application fields to DB fields.
+     * @param {string} userId - The ID of the user to update.
+     * @param {object} updateData - An object with app-level fields to update (e.g., { name: 'New Name' }).
+     * @returns {Promise<object|null>} The updated, sanitized user document.
+     */
+    async updateById(userId, updateData) {
+        const dbUpdateData = {};
+        // Loop through incoming data and map keys to the DB schema using USER_FIELDS
+        for (const appField in updateData) {
+            if (USER_FIELDS[appField]) { // Check if the field is in our mapping
+                const dbField = USER_FIELDS[appField];
+                dbUpdateData[dbField] = updateData[appField];
+            }
+        }
+
+        // Only proceed if there is valid data to update
+        if (Object.keys(dbUpdateData).length === 0) {
+            return this.findById(userId); // Return the user without changes
+        }
+
+        const updateDocument = {
+            $set: {
+                ...dbUpdateData,
+                [USER_FIELDS.updatedAt]: new Date()
+            }
+        };
+
+        await this.collection.updateOne(
+            { [USER_FIELDS.id]: new ObjectId(userId) },
+            updateDocument
+        );
+
+        return this.findById(userId);
+    }
 }
 
 module.exports = UserModel;

@@ -7,5 +7,6 @@ const auth = require('../middlewares/auth.middleware');
 //without auth
 router.post('/signup', userController.signup);
 router.post('/login', auth.userAuth, userController.login);
+router.patch('/edit', auth.userAuth, userController.editProfile);
 
 module.exports = router;
