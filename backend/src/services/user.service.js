@@ -1,5 +1,6 @@
 const bcrypt = require('bcrypt');
 const { models: db } = require('../db/mongo/index');
+const { JwtHelper } = require('../middlewares/jwt.middleware');
 
 const EDITABLE_USER_FIELDS = ['name', 'email', 'mobile'];
 
@@ -120,9 +121,15 @@ class UserService {
      * @returns {string} A placeholder for the token.
      */
     generateToken(user) {
-        console.log('Token generation logic will be implemented here in the future.');
-        // Abhi ke liye, hum ek simple placeholder return karenge.
-        return 'placeholder_auth_token_for_now';
+        // Payload mein sirf zaroori aur non-sensitive data daalein.
+        const payload = {
+            id: user._id.toString()
+        };
+        
+        console.log(`Generating token for user ID: ${payload.id}`);
+
+        // Humare central JwtHelper se token generate karwana
+        return JwtHelper.generateToken(payload);
     }
 
     // --- PROFILE UPDATE FUNCTIONS ---

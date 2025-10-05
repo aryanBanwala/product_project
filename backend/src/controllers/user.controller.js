@@ -60,7 +60,7 @@ class UserController {
             await userService.matchPassword(password, userWithPassword.PASSWORD);
             
             // Step 4 (Future): Token generate karna
-            // const token = userService.generateToken(userWithPassword);
+            const token = userService.generateToken(userWithPassword);
 
             // Final Step: Response ke liye sanitized user data ko fetch karna
             const sanitizedUser = await db.users.findById(userWithPassword._id);
@@ -71,7 +71,7 @@ class UserController {
                 message: 'Login successful!',
                 data: {
                     user: sanitizedUser,
-                    // token: token // Yeh baad mein add hoga
+                    token: token
                 }
             });
 
