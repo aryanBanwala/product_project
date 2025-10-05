@@ -1,31 +1,41 @@
-// src/controllers/user.controller.js
 const userService = require('../services/user.service');
 
 class UserController {
     /**
-     * Controller method for user signup.
-     * It handles the request and response for the signup route.
-     * @param {object} req - Express request object.
-     * @param {object} res - Express response object.
+     * Handles the user signup request by calling service functions step-by-step.
      */
-    signup(req, res) {
+    async signup(req, res) {
         try {
-            const { email, password } = req.body;
-
-            if (!email || !password) {
-                return res.status(400).json({ message: 'Email and password are required' });
+            // Step 1: Call validation service
+            const validationResult = userService.validateSignupInput(req.body);
+            if (!validationResult.isValid) {
+                // If validation fails, send a 400 Bad Request response and stop.
+                return res.status(400).json({
+                    success: false,
+                    message: validationResult.message
+                });
             }
 
-            const newUser = userService.createUser(email, password);
-            
-            res.status(201).json({ 
-                message: "User signed up successfully!",
-                data: newUser 
+            // Step 2: Call service to check if user already exists
+            await userService.checkUserExistsByMobile(req.body.mobile);
+
+            // Step 3: Call service to add the user to the database
+            const newUser = await userService.addUserToDB(req.body);
+
+            // Step 4: Send the final successful response
+            res.status(201).json({
+                success: true,
+                message: 'User created successfully!',
+                data: newUser
             });
 
         } catch (error) {
-            console.error('Signup Error:', error);
-            res.status(500).json({ message: 'An error occurred during signup.' });
+            // This will catch errors thrown from the service (e.g., user exists)
+            console.error('Error during user signup:', error.message);
+            res.status(error.statusCode || 500).json({
+                success: false,
+                message: error.message || 'An internal server error occurred.'
+            });
         }
     }
 }
