@@ -1,8 +1,8 @@
+const { ObjectId } = require('mongodb');
 const { models: db } = require('../db/mongo/index');
 const { PRODUCT_CATEGORIES, DISCOUNT_VALUES , PRODUCT_FIELDS} = require('../db/mongo/product');
 
 const ALLOWED_SORT_FIELDS = ['name', 'price', 'discountFactor', 'finalTotalPrice', 'stock', 'createdAt'];
-
 class ProductService {
     /**
      * Validates the input data for a new product.
@@ -115,6 +115,52 @@ class ProductService {
             }
         };
     }
+
+    /**
+     * Validates if a given string is a valid MongoDB ObjectId.
+     * @param {string} productId The ID to validate.
+     */
+    validateProductId(productId) {
+        if (!ObjectId.isValid(productId)) {
+            const error = new Error('Invalid product ID format.');
+            error.statusCode = 400; // Bad Request
+            throw error;
+        }
+    }
+
+    /**
+     * Fetches a product and verifies that the given user is its owner.
+     * @param {string} productId The ID of the product to check.
+     * @param {string} userId The ID of the user to verify against.
+     */
+    async verifyProductOwner(productId, userId) {
+        const product = await db.product.findById(productId);
+        if (!product) {
+            const error = new Error('Product not found.');
+            error.statusCode = 404;
+            throw error;
+        }
+
+        // The 'createdBy' field is already a string from the _sanitizeProduct method
+        if (product.createdBy.toString() !== userId) {
+            const error = new Error('Forbidden. You can only delete your own products.');
+            error.statusCode = 403;
+            throw error;
+        }
+    }
+
+    /**
+     * Deletes a product from the database after ownership has been verified.
+     * @param {string} productId The ID of the product to delete.
+     */
+    async deleteProductFromDB(productId) {
+        const result = await db.product.deleteOneById(productId);
+        if (result.deletedCount === 0) {
+            // This is a safeguard. This error shouldn't be hit if verifyProductOwner runs first.
+            throw new Error('Product could not be deleted or was already deleted.');
+        }
+    }
+
 }
 
 module.exports = new ProductService();

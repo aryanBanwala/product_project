@@ -58,6 +58,38 @@ class ProductController {
         }
     }
 
+    /**
+     * Handles the request to delete a product by orchestrating service calls.
+     */
+    async deleteProduct(req, res) {
+        try {
+            const { productId } = req.query;
+            const userId = req.user.id;
+
+            // Step 1: Validate the format of the product ID
+            productService.validateProductId(productId);
+
+            // Step 2: Verify that the product exists and the user owns it
+            await productService.verifyProductOwner(productId, userId);
+
+            // Step 3: If the above checks pass, delete the product
+            await productService.deleteProductFromDB(productId);
+
+            // Send a success response
+            res.status(200).json({
+                success: true,
+                message: 'Product deleted successfully.'
+            });
+
+        } catch (error) {
+            console.error('Error while deleting product:', error.message);
+            res.status(error.statusCode || 500).json({
+                success: false,
+                message: error.message || 'An internal server error occurred.'
+            });
+        }
+    }
+
 }
 
 module.exports = new ProductController();

@@ -144,6 +144,17 @@ class ProductModel {
         return { products, totalCount };
     }
 
+    /**
+     * Deletes a product by its ID without checking for ownership.
+     * @param {string} productId - The ID of the product to delete.
+     * @returns {Promise<object>} The result of the delete operation from MongoDB.
+     */
+    async deleteOneById(productId) {
+        return this.collection.deleteOne({
+            [PRODUCT_FIELDS.id]: new ObjectId(productId)
+        });
+    }
+
 }
 
 module.exports = { ProductModel, PRODUCT_FIELDS , PRODUCT_CATEGORIES, DISCOUNT_VALUES };
