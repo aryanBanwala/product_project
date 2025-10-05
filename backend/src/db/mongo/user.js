@@ -98,6 +98,17 @@ class UserModel {
     }
 
     /**
+     * Finds a user by mobile for login purposes, returning the raw document.
+     * Yeh method password hash bhi return karta hai taaki usey compare kiya ja sake.
+     * @param {string} mobile - User ka mobile number.
+     * @returns {Promise<object|null>} User ka raw document ya null.
+     */
+    async findForLoginByMobile(mobile) {
+        // Dhyaan dein: Hum yahan _sanitizeUser ko call NAHI kar rahe hain
+        return this.collection.findOne({ [USER_FIELDS.mobile]: mobile });
+    }
+
+    /**
      * Finds a user by their ID.
      * @param {string} id - The user's ID.
      * @returns {Promise<object|null>} The sanitized user document or null if not found.
