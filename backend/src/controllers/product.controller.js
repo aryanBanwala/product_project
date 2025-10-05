@@ -90,6 +90,40 @@ class ProductController {
         }
     }
 
+    /**
+     * Handles the request to edit a product by orchestrating service calls.
+     */
+    async editProduct(req, res) {
+        try {
+            const { productId } = req.query;
+            const userId = req.user.id;
+
+            // Step 1: Validate input data and filter for allowed fields
+            const validatedData = productService.validateProductUpdate(req.body);
+
+            // Step 2: Verify product exists and user is the owner.
+            // This also returns the original product, which we need for calculations.
+            const originalProduct = await productService.verifyProductOwner(productId, userId);
+
+            // Step 3: Update the product in the database
+            const updatedProduct = await productService.updateProductInDB(productId, validatedData, originalProduct);
+
+            // Step 4: Send the successful response
+            res.status(200).json({
+                success: true,
+                message: 'Product updated successfully!',
+                data: updatedProduct
+            });
+
+        } catch (error) {
+            console.error('Error while editing product:', error.message);
+            res.status(error.statusCode || 500).json({
+                success: false,
+                message: error.message || 'An internal server error occurred.'
+            });
+        }
+    }
+
 }
 
 module.exports = new ProductController();

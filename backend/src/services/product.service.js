@@ -2,7 +2,9 @@ const { ObjectId } = require('mongodb');
 const { models: db } = require('../db/mongo/index');
 const { PRODUCT_CATEGORIES, DISCOUNT_VALUES , PRODUCT_FIELDS} = require('../db/mongo/product');
 
+const EDITABLE_PRODUCT_FIELDS = ['name', 'description', 'price', 'category', 'stock', 'discountFactor'];
 const ALLOWED_SORT_FIELDS = ['name', 'price', 'discountFactor', 'finalTotalPrice', 'stock', 'createdAt'];
+
 class ProductService {
     /**
      * Validates the input data for a new product.
@@ -147,6 +149,8 @@ class ProductService {
             error.statusCode = 403;
             throw error;
         }
+        
+        return product;
     }
 
     /**
@@ -159,6 +163,49 @@ class ProductService {
             // This is a safeguard. This error shouldn't be hit if verifyProductOwner runs first.
             throw new Error('Product could not be deleted or was already deleted.');
         }
+    }
+
+    /**
+     * Validates and filters the incoming data for a product update.
+     * @param {object} updateData The raw data from the request body.
+     * @returns {object} The filtered and validated data.
+     */
+    validateProductUpdate(updateData) {
+        const filteredData = {};
+        for (const field of EDITABLE_PRODUCT_FIELDS) {
+            if (updateData.hasOwnProperty(field)) {
+                // Add more specific validation here if needed (e.g., check types)
+                filteredData[field] = updateData[field];
+            }
+        }
+
+        if (Object.keys(filteredData).length === 0) {
+            const error = new Error('No valid fields provided for update.');
+            error.statusCode = 400;
+            throw error;
+        }
+
+        return filteredData;
+    }
+
+    /**
+     * Updates a product in the database, recalculating derived fields.
+     * @param {string} productId The ID of the product to update.
+     * @param {object} validatedData The validated data to update with.
+     * @param {object} originalProduct The original product document from the owner check.
+     */
+    async updateProductInDB(productId, validatedData, originalProduct) {
+        let dataToUpdate = { ...validatedData };
+        
+        // Recalculate finalTotalPrice if price or discountFactor is being changed
+        const newPrice = validatedData.price !== undefined ? validatedData.price : originalProduct.price;
+        const newDiscount = validatedData.discountFactor !== undefined ? validatedData.discountFactor : originalProduct.discountFactor;
+
+        if (validatedData.price !== undefined || validatedData.discountFactor !== undefined) {
+             dataToUpdate.finalTotalPrice = newPrice - (newPrice * (newDiscount / 100));
+        }
+
+        return db.product.updateById(productId, dataToUpdate);
     }
 
 }

@@ -155,6 +155,41 @@ class ProductModel {
         });
     }
 
+    /**
+     * Updates a product's details, correctly mapping application fields to DB fields.
+     * @param {string} productId - The ID of the product to update.
+     * @param {object} updateData - An object with app-level fields to update (e.g., { name: 'New Name' }).
+     * @returns {Promise<object|null>} The updated, sanitized user document.
+     */
+    async updateById(productId, updateData) {
+        const dbUpdateData = {};
+        // Loop through incoming data and map keys to the DB schema using PRODUCT_FIELDS
+        for (const appField in updateData) {
+            if (PRODUCT_FIELDS[appField]) { // Check if the field is in our mapping
+                const dbField = PRODUCT_FIELDS[appField];
+                dbUpdateData[dbField] = updateData[appField];
+            }
+        }
+
+        if (Object.keys(dbUpdateData).length === 0) {
+            return this.findById(productId); // No valid fields to update, return unchanged
+        }
+
+        const updateDocument = {
+            $set: {
+                ...dbUpdateData,
+                [PRODUCT_FIELDS.updatedAt]: new Date()
+            }
+        };
+
+        await this.collection.updateOne(
+            { [PRODUCT_FIELDS.id]: new ObjectId(productId) },
+            updateDocument
+        );
+
+        return this.findById(productId);
+    }
+
 }
 
 module.exports = { ProductModel, PRODUCT_FIELDS , PRODUCT_CATEGORIES, DISCOUNT_VALUES };
