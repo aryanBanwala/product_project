@@ -7,6 +7,7 @@ const productRoutes = require('./src/routes/product.route');
 
 // Middleware to parse JSON bodies
 app.use(express.json());
+app.use(require('cors')());
 
 app.use('/api/users', userRoutes);
 app.use('/api/common', commonRoutes);
