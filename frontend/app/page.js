@@ -6,10 +6,10 @@ export default function Home() {
       <div className="bg-white/80 backdrop-blur-md rounded-3xl shadow-2xl p-12 max-w-lg w-full flex flex-col items-center border border-blue-100">
         
         <h1 className="text-4xl font-extrabold text-blue-800 mb-3 text-center tracking-tight">
-          Move Ahead 🚀
+          Welcome to My Project 📦
         </h1>
         <p className="text-gray-700 text-center mb-10 text-lg leading-relaxed">
-          Take the next step in your journey. <span className="font-semibold text-blue-600">Join our community</span> and unlock new opportunities for growth and success.
+          This is a simple application for managing products. You can sign up or log in to add, view, update, and delete products from the list.
         </p>
         <a
           href="/login"
