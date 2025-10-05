@@ -208,6 +208,78 @@ class ProductService {
         return db.product.updateById(productId, dataToUpdate);
     }
 
+      /**
+   * Escape user input for safe RegExp usage.
+   * @param {string} text
+   * @returns {string}
+   */
+    _escapeRegex(text = '') {
+        return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    /**
+     * 1) Validate search keyword (simple, synchronous)
+     * @param {string} keyword
+     * @returns {{isValid: boolean, message?: string}}
+     */
+    validateSearchKeyword(keyword) {
+        if (keyword === undefined || keyword === null) {
+            return { isValid: false, message: 'keyword missing' };
+        }
+        if (typeof keyword !== 'string') {
+            return { isValid: false, message: 'keyword must be a string' };
+        }
+        const trimmed = keyword.trim();
+        if (trimmed.length === 0) {
+            return { isValid: false, message: 'keyword empty' };
+        }
+        if (trimmed.length > 50) {
+            return { isValid: false, message: 'keyword too long' };
+        }
+        return { isValid: true };
+    }
+
+      /**
+     * 2) Fetch products from DB for search (up to 10,000)
+     * Uses the existing db.product.findAll() method directly.
+     * @param {object} opts - Optional { limit: number }
+     * @returns {Promise<Array>} products array
+     */
+    async fetchProductsForSearch(opts = {}) {
+        const limit = Math.min(Number(opts.limit) || 10000, 10000);
+        const products = await db.product.getProducts(limit);
+        return products || [];
+    }
+
+    /**
+     * 3) Filter product list by regex on name (case-insensitive).
+     * Uses safe escaping; returns matched array.
+     * @param {Array} products  array of product objects
+     * @param {string} keyword
+     * @param {object} opts optional { nameField: string }  // default 'name'
+     * @returns {Array} filtered products
+     */
+    filterProductsByRegex(products = [], keyword = '', opts = {}) {
+        const nameField = opts.nameField || 'name'; // change if your model uses different key
+        const trimmed = (keyword || '').trim();
+        if (!trimmed) return [];
+
+        const safe = this._escapeRegex(trimmed);
+        const re = new RegExp(safe, 'i');
+
+        return products.filter(p => {
+            // defensively read name value
+            let nm = '';
+            if (!p) return false;
+            if (typeof p === 'string') nm = p;
+            else if (p[nameField] !== undefined && p[nameField] !== null) nm = p[nameField];
+            else if (p[PRODUCT_FIELDS && PRODUCT_FIELDS.name]) nm = p[PRODUCT_FIELDS.name]; // try DB-field mapping
+            nm = nm.toString();
+            return re.test(nm);
+        });
+    }
+
+
 }
 
 module.exports = new ProductService();

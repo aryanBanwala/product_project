@@ -15,4 +15,7 @@ router.delete('/', auth.userAuth, productController.deleteProduct);
 // Route to edit a product (Protected)
 router.patch('/', auth.userAuth, productController.editProduct);
 
+// GET /products/search/:keyword
+router.get('/search', auth.userAuth, productController.searchProducts);
+
 module.exports = router;

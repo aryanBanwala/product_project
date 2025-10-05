@@ -190,6 +190,24 @@ class ProductModel {
         return this.findById(productId);
     }
 
+      /**
+     * Fetch all products with a simple limit.
+     * No filters, no pagination logic.
+     * @param {number} limit - Max number of products to fetch.
+     * @returns {Promise<Array>} - Array of sanitized product objects.
+     */
+    async getProducts(limit = 10000) {
+        const docs = await this.collection
+            .find({}, { projection: {} })
+            .limit(limit)
+            .toArray();
+
+        // Sanitize each product (same as other methods)
+        const products = docs.map(doc => this._sanitizeProduct(doc));
+
+        return products;
+    }
+
 }
 
 module.exports = { ProductModel, PRODUCT_FIELDS , PRODUCT_CATEGORIES, DISCOUNT_VALUES };

@@ -124,6 +124,38 @@ class ProductController {
         }
     }
 
+    async searchProducts(req, res) {
+        try {
+            // keyword from URL path
+            const { keyword } = req.query;
+
+            // 1) validate
+            const validated = productService.validateSearchKeyword(keyword);
+            if (!validated.isValid) {
+                return res.status(400).json({ success: false, message: validated.message });
+            }
+
+            // 2) fetch up to 10k products from DB
+            // returns array of sanitized product objects
+            const products = await productService.fetchProductsForSearch({ limit: 10000 });
+
+            // 3) apply regex filter
+            const matched = productService.filterProductsByRegex(products, keyword);
+            // send results
+            return res.status(200).json({
+                success: true,
+                keyword,
+                totalFetched: products.length,
+                totalMatched: matched.length,
+                products: matched
+            });
+        } catch (err) {
+            console.error('searchProducts error', err);
+            return res.status(500).json({ success: false, message: 'Internal server error' });
+        }
+    }
+
+
 }
 
 module.exports = new ProductController();
