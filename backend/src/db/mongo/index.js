@@ -1,3 +1,4 @@
+const { ProductModel } = require('./product');
 const UserModel = require('./user');
 
 // This object will hold all initialized model instances.
@@ -5,6 +6,7 @@ const models = {};
 
 const initializeCollections = (db) => {
     models.users = UserModel.init(db);
+    models.product = ProductModel.init(db);
 
     console.log('✅ MongoDB collections initialized.');
 };
