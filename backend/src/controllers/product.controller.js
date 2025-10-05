@@ -58,6 +58,32 @@ class ProductController {
         }
     }
 
+    async getSingleProduct(req, res) {
+        try {
+            const { productId } = req.query;
+            const userId = req.user.id;
+
+            // Validate the id first
+            productService.validateProductId(productId);
+            
+            // Get the details of the product, if it is verified.
+            const result = await productService.verifyProductOwner(productId, userId);
+
+            res.status(200).json({
+                success: true,
+                message: 'Product fetched successfully!',
+                data: result
+            });
+        } catch (error) {
+            console.error('Error while fetching product:', error.message);
+            res.status(500).json({
+                success: false,
+                message: error.message || 'Failed to fetch product.'
+            });
+        }
+    }
+
+
     /**
      * Handles the request to delete a product by orchestrating service calls.
      */

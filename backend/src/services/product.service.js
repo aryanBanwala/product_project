@@ -145,7 +145,7 @@ class ProductService {
 
         // The 'createdBy' field is already a string from the _sanitizeProduct method
         if (product.createdBy.toString() !== userId) {
-            const error = new Error('Forbidden. You can only delete your own products.');
+            const error = new Error('Forbidden. You can only take actions on your own products.');
             error.statusCode = 403;
             throw error;
         }

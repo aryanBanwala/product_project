@@ -17,10 +17,12 @@ class MongoDatabase {
         let mongoUri;
 
         if (env === 'prod') {
+            console.log("Prod Environment!");
             const user = process.env.MONGO_PROD_USER, pass = process.env.MONGO_PROD_PASS, host = process.env.MONGO_PROD_HOST;
             if (!user || !pass || !host || !dbName) throw new Error('Production DB env vars must be defined.');
             mongoUri = `mongodb+srv://${user}:${pass}@${host}`;
         } else {
+            console.log("Local Environment!");
             const host = process.env.MONGO_LOCAL_HOST;
             if (!host || !dbName) throw new Error('Development DB env vars must be defined.');
             mongoUri = `mongodb://${host}`;
